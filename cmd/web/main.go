@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -15,7 +14,15 @@ import (
 func main() {
 	addr := os.Getenv("SNIPPETBOX_ADDR")
 
-	flag.Parse()
+	f, err := os.OpenFile("/tmp/info.log", os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+
+	infoLog := log.New(f, "INFO\t", log.Ldate|log.Ltime)
+
+	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
 	mux := http.NewServeMux()
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
@@ -25,7 +32,13 @@ func main() {
 	snippetsRoutes.MakeRoutes(mux, &snippetsHandler.Handler{})
 	homeRoutes.MakeRoutes(mux, &commonHandler.Handler{})
 
-	log.Printf("Starting server on %s", addr)
-	err := http.ListenAndServe(addr, mux)
-	log.Fatal(err)
+	srv := &http.Server{
+		Addr:     addr,
+		ErrorLog: errorLog,
+		Handler:  mux,
+	}
+
+	infoLog.Printf("Starting server on %s", addr)
+	err = srv.ListenAndServe()
+	errorLog.Fatal(err)
 }
