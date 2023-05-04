@@ -1,19 +1,31 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
+	"os"
 
+	commonHandler "github.com/AlejoGarat/snippetbox/internal/common/handlers"
+	homeRoutes "github.com/AlejoGarat/snippetbox/internal/common/routes"
 	snippetsHandler "github.com/AlejoGarat/snippetbox/internal/snippets/handlers"
+	snippetsRoutes "github.com/AlejoGarat/snippetbox/internal/snippets/routes"
 )
 
 func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", snippetsHandler.Home)
-	mux.HandleFunc("/snippet/view", snippetsHandler.SnippetView)
-	mux.HandleFunc("/snippet/create", snippetsHandler.SnippetCreate)
+	addr := os.Getenv("SNIPPETBOX_ADDR")
 
-	log.Print("Starting server on :4000")
-	err := http.ListenAndServe(":4000", mux)
+	flag.Parse()
+
+	mux := http.NewServeMux()
+	fileServer := http.FileServer(http.Dir("./ui/static/"))
+
+	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
+
+	snippetsRoutes.MakeRoutes(mux, &snippetsHandler.Handler{})
+	homeRoutes.MakeRoutes(mux, &commonHandler.Handler{})
+
+	log.Printf("Starting server on %s", addr)
+	err := http.ListenAndServe(addr, mux)
 	log.Fatal(err)
 }
