@@ -7,6 +7,8 @@ import (
 )
 
 type Handler struct {
+	ErrorLog *log.Logger
+	InfoLog  *log.Logger
 }
 
 func (s *Handler) HomeView() func(w http.ResponseWriter, r *http.Request) {
@@ -24,14 +26,14 @@ func (s *Handler) HomeView() func(w http.ResponseWriter, r *http.Request) {
 
 		ts, err := template.ParseFiles(files...)
 		if err != nil {
-			log.Print(err.Error())
+			s.ErrorLog.Print(err.Error())
 			http.Error(w, "Internal Server Error", 500)
 			return
 		}
 
 		err = ts.ExecuteTemplate(w, "base", nil)
 		if err != nil {
-			log.Print(err.Error())
+			s.ErrorLog.Print(err.Error())
 			http.Error(w, "Internal Server Error", 500)
 		}
 	}

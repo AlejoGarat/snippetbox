@@ -21,7 +21,6 @@ func main() {
 	defer f.Close()
 
 	infoLog := log.New(f, "INFO\t", log.Ldate|log.Ltime)
-
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
 	mux := http.NewServeMux()
@@ -29,8 +28,12 @@ func main() {
 
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
-	snippetsRoutes.MakeRoutes(mux, &snippetsHandler.Handler{})
-	homeRoutes.MakeRoutes(mux, &commonHandler.Handler{})
+	snippetsRoutes.MakeRoutes(mux, &snippetsHandler.Handler{
+		ErrorLog: errorLog, InfoLog: infoLog,
+	})
+	homeRoutes.MakeRoutes(mux, &commonHandler.Handler{
+		ErrorLog: errorLog, InfoLog: infoLog,
+	})
 
 	srv := &http.Server{
 		Addr:     addr,
