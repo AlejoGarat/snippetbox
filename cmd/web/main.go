@@ -10,8 +10,10 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 
 	homeHandler "github.com/AlejoGarat/snippetbox/internal/home/handlers"
+	homeRepo "github.com/AlejoGarat/snippetbox/internal/home/repository"
 	homeRoutes "github.com/AlejoGarat/snippetbox/internal/home/routes"
 	snippetsHandler "github.com/AlejoGarat/snippetbox/internal/snippets/handlers"
+	snippetRepo "github.com/AlejoGarat/snippetbox/internal/snippets/repository"
 	snippetsRoutes "github.com/AlejoGarat/snippetbox/internal/snippets/routes"
 )
 
@@ -43,10 +45,14 @@ func main() {
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
 	snippetsRoutes.MakeRoutes(mux, &snippetsHandler.Handler{
-		ErrorLog: errorLog, InfoLog: infoLog,
+		ErrorLog: errorLog,
+		InfoLog:  infoLog,
+		Repo:     &snippetRepo.SnippetRepo{DB: db},
 	})
 	homeRoutes.MakeRoutes(mux, &homeHandler.Handler{
-		ErrorLog: errorLog, InfoLog: infoLog,
+		ErrorLog: errorLog,
+		InfoLog:  infoLog,
+		Repo:     &homeRepo.HomeRepo{DB: db},
 	})
 
 	srv := &http.Server{

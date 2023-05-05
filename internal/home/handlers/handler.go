@@ -4,11 +4,14 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+
+	repo "github.com/AlejoGarat/snippetbox/internal/home/repository"
 )
 
 type Handler struct {
 	ErrorLog *log.Logger
 	InfoLog  *log.Logger
+	Repo     *repo.HomeRepo
 }
 
 func (s *Handler) HomeView() func(w http.ResponseWriter, r *http.Request) {

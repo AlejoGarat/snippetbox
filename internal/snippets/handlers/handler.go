@@ -5,11 +5,14 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+
+	repo "github.com/AlejoGarat/snippetbox/internal/snippets/repository"
 )
 
 type Handler struct {
 	ErrorLog *log.Logger
 	InfoLog  *log.Logger
+	Repo     *repo.SnippetRepo
 }
 
 func (h *Handler) SnippetView() func(w http.ResponseWriter, r *http.Request) {
