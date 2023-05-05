@@ -48,7 +48,3 @@ func (sr *SnippetRepo) Get(id int) (*models.Snippet, error) {
 
 	return s, nil
 }
-
-func (sr *SnippetRepo) Latest() ([]*models.Snippet, error) {
-	return nil, nil
-}

@@ -1,11 +1,12 @@
 package handlers
 
 import (
-	"html/template"
+	"fmt"
 	"log"
 	"net/http"
 
 	repo "github.com/AlejoGarat/snippetbox/internal/home/repository"
+	httphelpers "github.com/AlejoGarat/snippetbox/pkg"
 )
 
 type Handler struct {
@@ -17,27 +18,40 @@ type Handler struct {
 func (s *Handler) HomeView() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
-			http.NotFound(w, r)
+			httphelpers.NotFound(w)
 			return
 		}
 
-		files := []string{
-			"./ui/html/base.tmpl",
-			"./ui/html/pages/home.tmpl",
-			"./ui/html/partials/nav.tmpl",
-		}
-
-		ts, err := template.ParseFiles(files...)
+		snippets, err := s.Repo.Latest()
 		if err != nil {
-			s.ErrorLog.Print(err.Error())
-			http.Error(w, "Internal Server Error", 500)
+			httphelpers.ServerError(w, err)
 			return
 		}
 
-		err = ts.ExecuteTemplate(w, "base", nil)
-		if err != nil {
-			s.ErrorLog.Print(err.Error())
-			http.Error(w, "Internal Server Error", 500)
+		for _, snippet := range snippets {
+			fmt.Fprintf(w, "%+v\n", snippet)
 		}
+
+		/*
+
+			files := []string{
+				"./ui/html/base.tmpl",
+				"./ui/html/pages/home.tmpl",
+				"./ui/html/partials/nav.tmpl",
+			}
+
+			ts, err := template.ParseFiles(files...)
+			if err != nil {
+				s.ErrorLog.Print(err.Error())
+				http.Error(w, "Internal Server Error", 500)
+				return
+			}
+
+			err = ts.ExecuteTemplate(w, "base", nil)
+			if err != nil {
+				s.ErrorLog.Print(err.Error())
+				http.Error(w, "Internal Server Error", 500)
+			}
+		*/
 	}
 }
