@@ -5,24 +5,35 @@ import (
 	"log"
 	"net/http"
 
-	repo "github.com/AlejoGarat/snippetbox/internal/home/repository"
+	"github.com/AlejoGarat/snippetbox/internal/snippets/models"
 	httphelpers "github.com/AlejoGarat/snippetbox/pkg"
 )
 
-type Handler struct {
-	ErrorLog *log.Logger
-	InfoLog  *log.Logger
-	Repo     *repo.HomeRepo
+type HomeRepo interface {
+	Latest() ([]*models.Snippet, error)
+}
+type handler struct {
+	errorLog *log.Logger
+	infoLog  *log.Logger
+	repo     HomeRepo
 }
 
-func (s *Handler) HomeView() func(w http.ResponseWriter, r *http.Request) {
+func New(errorLog *log.Logger, infoLog *log.Logger, repo HomeRepo) *handler {
+	return &handler{
+		errorLog: errorLog,
+		infoLog:  infoLog,
+		repo:     repo,
+	}
+}
+
+func (s *handler) HomeView() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
 			httphelpers.NotFound(w)
 			return
 		}
 
-		snippets, err := s.Repo.Latest()
+		snippets, err := s.repo.Latest()
 		if err != nil {
 			httphelpers.ServerError(w, err)
 			return

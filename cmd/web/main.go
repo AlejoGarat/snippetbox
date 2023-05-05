@@ -44,16 +44,16 @@ func main() {
 
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
-	snippetsRoutes.MakeRoutes(mux, &snippetsHandler.Handler{
-		ErrorLog: errorLog,
-		InfoLog:  infoLog,
-		Repo:     &snippetRepo.SnippetRepo{DB: db},
-	})
-	homeRoutes.MakeRoutes(mux, &homeHandler.Handler{
-		ErrorLog: errorLog,
-		InfoLog:  infoLog,
-		Repo:     &homeRepo.HomeRepo{DB: db},
-	})
+	snippetsRoutes.MakeRoutes(mux, snippetsHandler.New(
+		errorLog,
+		infoLog,
+		&snippetRepo.SnippetRepo{DB: db},
+	))
+	homeRoutes.MakeRoutes(mux, homeHandler.New(
+		errorLog,
+		infoLog,
+		&homeRepo.HomeRepo{DB: db},
+	))
 
 	srv := &http.Server{
 		Addr:     *addr,

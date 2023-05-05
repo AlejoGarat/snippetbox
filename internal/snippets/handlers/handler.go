@@ -9,17 +9,30 @@ import (
 	"strconv"
 
 	"github.com/AlejoGarat/snippetbox/internal/repositoryerrors"
-	repo "github.com/AlejoGarat/snippetbox/internal/snippets/repository"
+	"github.com/AlejoGarat/snippetbox/internal/snippets/models"
 	httphelpers "github.com/AlejoGarat/snippetbox/pkg"
 )
 
-type Handler struct {
-	ErrorLog *log.Logger
-	InfoLog  *log.Logger
-	Repo     *repo.SnippetRepo
+type handler struct {
+	errorLog *log.Logger
+	infoLog  *log.Logger
+	repo     SnippetRepo
 }
 
-func (h *Handler) SnippetView() func(w http.ResponseWriter, r *http.Request) {
+type SnippetRepo interface {
+	Insert(title string, content string, expires int) (int, error)
+	Get(id int) (*models.Snippet, error)
+}
+
+func New(errorLog *log.Logger, infoLog *log.Logger, repo SnippetRepo) *handler {
+	return &handler{
+		errorLog: errorLog,
+		infoLog:  infoLog,
+		repo:     repo,
+	}
+}
+
+func (h *handler) SnippetView() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := strconv.Atoi(r.URL.Query().Get("id"))
 		if err != nil || id < 1 {
@@ -27,7 +40,7 @@ func (h *Handler) SnippetView() func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		snippet, err := h.Repo.Get(id)
+		snippet, err := h.repo.Get(id)
 		if err != nil {
 			if errors.Is(err, repositoryerrors.ErrNoRecord) {
 				httphelpers.NotFound(w)
@@ -43,7 +56,7 @@ func (h *Handler) SnippetView() func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) SnippetCreate() func(w http.ResponseWriter, r *http.Request) {
+func (h *handler) SnippetCreate() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			w.Header().Set("Allow", http.MethodPost)
@@ -56,10 +69,10 @@ func (h *Handler) SnippetCreate() func(w http.ResponseWriter, r *http.Request) {
 		content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
 		expires := 7
 
-		id, err := h.Repo.Insert(title, content, expires)
+		id, err := h.repo.Insert(title, content, expires)
 		if err != nil {
 			trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
-			h.ErrorLog.Output(2, trace)
+			h.errorLog.Output(2, trace)
 			httphelpers.ServerError(w, err)
 			return
 		}
