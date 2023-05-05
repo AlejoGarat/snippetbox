@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"runtime/debug"
 	"strconv"
 
+	"github.com/AlejoGarat/snippetbox/internal/repositoryerrors"
 	repo "github.com/AlejoGarat/snippetbox/internal/snippets/repository"
 	httphelpers "github.com/AlejoGarat/snippetbox/pkg"
 )
@@ -21,11 +23,22 @@ func (h *Handler) SnippetView() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := strconv.Atoi(r.URL.Query().Get("id"))
 		if err != nil || id < 1 {
-			http.NotFound(w, r)
+			httphelpers.NotFound(w)
 			return
 		}
 
-		fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
+		snippet, err := h.Repo.Get(id)
+		if err != nil {
+			if errors.Is(err, repositoryerrors.ErrNoRecord) {
+				httphelpers.NotFound(w)
+			} else {
+				httphelpers.ServerError(w, err)
+			}
+			return
+		}
+
+		// Write the snippet data as a plain-text HTTP response body.
+		fmt.Fprintf(w, "%+v", snippet)
 
 	}
 }
