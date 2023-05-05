@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"runtime/debug"
 	"strconv"
 
 	repo "github.com/AlejoGarat/snippetbox/internal/snippets/repository"
+	httphelpers "github.com/AlejoGarat/snippetbox/pkg"
 )
 
 type Handler struct {
@@ -36,6 +38,19 @@ func (h *Handler) SnippetCreate() func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		w.Write([]byte("Create a new snippet..."))
+		//Simulate incoming data
+		title := "O snail"
+		content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
+		expires := 7
+
+		id, err := h.Repo.Insert(title, content, expires)
+		if err != nil {
+			trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
+			h.ErrorLog.Output(2, trace)
+			httphelpers.ServerError(w, err)
+			return
+		}
+
+		http.Redirect(w, r, fmt.Sprintf("/snippet/view?id=%d", id), http.StatusSeeOther)
 	}
 }
