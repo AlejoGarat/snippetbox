@@ -1,18 +1,21 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 	"os"
 
-	commonHandler "github.com/AlejoGarat/snippetbox/internal/common/handlers"
-	homeRoutes "github.com/AlejoGarat/snippetbox/internal/common/routes"
+	homeHandler "github.com/AlejoGarat/snippetbox/internal/home/handlers"
+	homeRoutes "github.com/AlejoGarat/snippetbox/internal/home/routes"
 	snippetsHandler "github.com/AlejoGarat/snippetbox/internal/snippets/handlers"
 	snippetsRoutes "github.com/AlejoGarat/snippetbox/internal/snippets/routes"
 )
 
 func main() {
-	addr := os.Getenv("SNIPPETBOX_ADDR")
+	addr := flag.String("addr", ":4000", "HTTP network address")
+
+	flag.Parse()
 
 	f, err := os.OpenFile("/tmp/info.log", os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
@@ -31,17 +34,17 @@ func main() {
 	snippetsRoutes.MakeRoutes(mux, &snippetsHandler.Handler{
 		ErrorLog: errorLog, InfoLog: infoLog,
 	})
-	homeRoutes.MakeRoutes(mux, &commonHandler.Handler{
+	homeRoutes.MakeRoutes(mux, &homeHandler.Handler{
 		ErrorLog: errorLog, InfoLog: infoLog,
 	})
 
 	srv := &http.Server{
-		Addr:     addr,
+		Addr:     *addr,
 		ErrorLog: errorLog,
 		Handler:  mux,
 	}
 
-	infoLog.Printf("Starting server on %s", addr)
+	infoLog.Printf("Starting server on %s", *addr)
 	err = srv.ListenAndServe()
 	errorLog.Fatal(err)
 }
