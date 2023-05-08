@@ -1,6 +1,7 @@
 package httphelpers
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"text/template"
@@ -16,10 +17,15 @@ func Render(w http.ResponseWriter, status int, page string, templateCache map[st
 		return
 	}
 
-	w.WriteHeader(status)
+	buf := new(bytes.Buffer)
 
-	err := ts.ExecuteTemplate(w, "base", data)
+	err := ts.ExecuteTemplate(buf, "base", data)
 	if err != nil {
 		ServerError(w, err)
+		return
 	}
+
+	w.WriteHeader(status)
+
+	buf.WriteTo(w)
 }
