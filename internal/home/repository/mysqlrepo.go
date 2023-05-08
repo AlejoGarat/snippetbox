@@ -6,11 +6,17 @@ import (
 	"github.com/AlejoGarat/snippetbox/internal/snippets/models"
 )
 
-type HomeRepo struct {
+type homeRepo struct {
 	DB *sql.DB
 }
 
-func (hr *HomeRepo) Latest() ([]*models.Snippet, error) {
+func NewSnippetRepo(db *sql.DB) *homeRepo {
+	return &homeRepo{
+		DB: db,
+	}
+}
+
+func (hr *homeRepo) Latest() ([]*models.Snippet, error) {
 	stmt := `SELECT id, title, content, created, expires FROM snippets
     WHERE expires > UTC_TIMESTAMP() ORDER BY id DESC LIMIT 10`
 

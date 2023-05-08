@@ -12,9 +12,11 @@ import (
 	homeHandler "github.com/AlejoGarat/snippetbox/internal/home/handlers"
 	homeRepo "github.com/AlejoGarat/snippetbox/internal/home/repository"
 	homeRoutes "github.com/AlejoGarat/snippetbox/internal/home/routes"
+	homeService "github.com/AlejoGarat/snippetbox/internal/home/service"
 	snippetsHandler "github.com/AlejoGarat/snippetbox/internal/snippets/handlers"
 	snippetRepo "github.com/AlejoGarat/snippetbox/internal/snippets/repository"
 	snippetsRoutes "github.com/AlejoGarat/snippetbox/internal/snippets/routes"
+	snippetService "github.com/AlejoGarat/snippetbox/internal/snippets/service"
 )
 
 func main() {
@@ -47,12 +49,12 @@ func main() {
 	snippetsRoutes.MakeRoutes(mux, snippetsHandler.New(
 		errorLog,
 		infoLog,
-		&snippetRepo.SnippetRepo{DB: db},
+		snippetService.NewSnippetService(snippetRepo.NewSnippetRepo(db)),
 	))
 	homeRoutes.MakeRoutes(mux, homeHandler.New(
 		errorLog,
 		infoLog,
-		&homeRepo.HomeRepo{DB: db},
+		homeService.NewHomeService(homeRepo.NewSnippetRepo(db)),
 	))
 
 	srv := &http.Server{

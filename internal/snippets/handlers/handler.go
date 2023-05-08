@@ -9,6 +9,7 @@ import (
 	"runtime/debug"
 	"strconv"
 
+	commonmodels "github.com/AlejoGarat/snippetbox/internal/models"
 	"github.com/AlejoGarat/snippetbox/internal/repositoryerrors"
 	"github.com/AlejoGarat/snippetbox/internal/snippets/models"
 	httphelpers "github.com/AlejoGarat/snippetbox/pkg"
@@ -17,19 +18,19 @@ import (
 type handler struct {
 	errorLog *log.Logger
 	infoLog  *log.Logger
-	repo     SnippetRepo
+	service  SnippetService
 }
 
-type SnippetRepo interface {
+type SnippetService interface {
 	Insert(title string, content string, expires int) (int, error)
 	Get(id int) (*models.Snippet, error)
 }
 
-func New(errorLog *log.Logger, infoLog *log.Logger, repo SnippetRepo) *handler {
+func New(errorLog *log.Logger, infoLog *log.Logger, service SnippetService) *handler {
 	return &handler{
 		errorLog: errorLog,
 		infoLog:  infoLog,
-		repo:     repo,
+		service:  service,
 	}
 }
 
@@ -41,7 +42,7 @@ func (h *handler) SnippetView() func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		snippet, err := h.repo.Get(id)
+		snippet, err := h.service.Get(id)
 		if err != nil {
 			if errors.Is(err, repositoryerrors.ErrNoRecord) {
 				httphelpers.NotFound(w)
@@ -57,16 +58,17 @@ func (h *handler) SnippetView() func(w http.ResponseWriter, r *http.Request) {
 			"./ui/html/pages/view.tmpl",
 		}
 
-		// Parse the template files...
 		ts, err := template.ParseFiles(files...)
 		if err != nil {
 			httphelpers.ServerError(w, err)
 			return
 		}
 
-		// And then execute them. Notice how we are passing in the snippet
-		// data (a models.Snippet struct) as the final parameter?
-		err = ts.ExecuteTemplate(w, "base", snippet)
+		data := &commonmodels.TemplateData{
+			Snippet: snippet,
+		}
+
+		err = ts.ExecuteTemplate(w, "base", data)
 		if err != nil {
 			httphelpers.ServerError(w, err)
 		}
@@ -86,7 +88,7 @@ func (h *handler) SnippetCreate() func(w http.ResponseWriter, r *http.Request) {
 		content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
 		expires := 7
 
-		id, err := h.repo.Insert(title, content, expires)
+		id, err := h.service.Insert(title, content, expires)
 		if err != nil {
 			trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
 			h.errorLog.Output(2, trace)

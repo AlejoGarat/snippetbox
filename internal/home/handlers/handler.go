@@ -1,28 +1,30 @@
 package handlers
 
 import (
-	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 
 	"github.com/AlejoGarat/snippetbox/internal/snippets/models"
+
+	commonmodels "github.com/AlejoGarat/snippetbox/internal/models"
 	httphelpers "github.com/AlejoGarat/snippetbox/pkg"
 )
 
-type HomeRepo interface {
+type HomeService interface {
 	Latest() ([]*models.Snippet, error)
 }
 type handler struct {
 	errorLog *log.Logger
 	infoLog  *log.Logger
-	repo     HomeRepo
+	service  HomeService
 }
 
-func New(errorLog *log.Logger, infoLog *log.Logger, repo HomeRepo) *handler {
+func New(errorLog *log.Logger, infoLog *log.Logger, service HomeService) *handler {
 	return &handler{
 		errorLog: errorLog,
 		infoLog:  infoLog,
-		repo:     repo,
+		service:  service,
 	}
 }
 
@@ -33,36 +35,32 @@ func (s *handler) HomeView() func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		snippets, err := s.repo.Latest()
+		snippets, err := s.service.Latest()
 		if err != nil {
 			httphelpers.ServerError(w, err)
 			return
 		}
 
-		for _, snippet := range snippets {
-			fmt.Fprintf(w, "%+v\n", snippet)
+		files := []string{
+			"./ui/html/base.tmpl",
+			"./ui/html/partials/nav.tmpl",
+			"./ui/html/pages/home.tmpl",
 		}
 
-		/*
+		ts, err := template.ParseFiles(files...)
+		if err != nil {
+			httphelpers.ServerError(w, err)
+			return
+		}
 
-			files := []string{
-				"./ui/html/base.tmpl",
-				"./ui/html/pages/home.tmpl",
-				"./ui/html/partials/nav.tmpl",
-			}
+		data := &commonmodels.TemplateData{
+			Snippets: snippets,
+		}
 
-			ts, err := template.ParseFiles(files...)
-			if err != nil {
-				s.ErrorLog.Print(err.Error())
-				http.Error(w, "Internal Server Error", 500)
-				return
-			}
-
-			err = ts.ExecuteTemplate(w, "base", nil)
-			if err != nil {
-				s.ErrorLog.Print(err.Error())
-				http.Error(w, "Internal Server Error", 500)
-			}
-		*/
+		// Pass in the templateData struct when executing the template.
+		err = ts.ExecuteTemplate(w, "base", data)
+		if err != nil {
+			httphelpers.ServerError(w, err)
+		}
 	}
 }

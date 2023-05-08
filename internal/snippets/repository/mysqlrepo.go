@@ -8,11 +8,17 @@ import (
 	"github.com/AlejoGarat/snippetbox/internal/snippets/models"
 )
 
-type SnippetRepo struct {
+type snippetRepo struct {
 	DB *sql.DB
 }
 
-func (sr *SnippetRepo) Insert(title string, content string, expires int) (int, error) {
+func NewSnippetRepo(db *sql.DB) *snippetRepo {
+	return &snippetRepo{
+		DB: db,
+	}
+}
+
+func (sr *snippetRepo) Insert(title string, content string, expires int) (int, error) {
 	stmt := `INSERT INTO snippets (title, content, created, expires)
     VALUES(?, ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY))`
 
@@ -29,7 +35,7 @@ func (sr *SnippetRepo) Insert(title string, content string, expires int) (int, e
 	return int(id), nil
 }
 
-func (sr *SnippetRepo) Get(id int) (*models.Snippet, error) {
+func (sr *snippetRepo) Get(id int) (*models.Snippet, error) {
 	stmt := `SELECT id, title, content, created, expires FROM snippets
     WHERE expires > UTC_TIMESTAMP() AND id = ?`
 
