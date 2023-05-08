@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"runtime/debug"
@@ -50,9 +51,25 @@ func (h *handler) SnippetView() func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Write the snippet data as a plain-text HTTP response body.
-		fmt.Fprintf(w, "%+v", snippet)
+		files := []string{
+			"./ui/html/base.tmpl",
+			"./ui/html/partials/nav.tmpl",
+			"./ui/html/pages/view.tmpl",
+		}
 
+		// Parse the template files...
+		ts, err := template.ParseFiles(files...)
+		if err != nil {
+			httphelpers.ServerError(w, err)
+			return
+		}
+
+		// And then execute them. Notice how we are passing in the snippet
+		// data (a models.Snippet struct) as the final parameter?
+		err = ts.ExecuteTemplate(w, "base", snippet)
+		if err != nil {
+			httphelpers.ServerError(w, err)
+		}
 	}
 }
 
