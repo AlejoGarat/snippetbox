@@ -9,6 +9,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 
+	fileServerRoutes "github.com/AlejoGarat/snippetbox/internal/fileserver/routes"
 	homeHandler "github.com/AlejoGarat/snippetbox/internal/home/handlers"
 	homeRepo "github.com/AlejoGarat/snippetbox/internal/home/repository"
 	homeRoutes "github.com/AlejoGarat/snippetbox/internal/home/routes"
@@ -25,7 +26,7 @@ func main() {
 
 	flag.Parse()
 
-	f, err := os.OpenFile("/tmp/info.log", os.O_RDWR|os.O_CREATE, 0666)
+	f, err := os.OpenFile("/tmp/info.log", os.O_RDWR|os.O_CREATE, 0o666)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -42,15 +43,15 @@ func main() {
 	defer db.Close()
 
 	mux := http.NewServeMux()
-	fileServer := http.FileServer(http.Dir("./ui/static/"))
 
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
+	fileServerRoutes.MakeRoutes(mux)
 
 	snippetsRoutes.MakeRoutes(mux, snippetsHandler.New(
 		errorLog,
 		infoLog,
 		snippetService.NewSnippetService(snippetRepo.NewSnippetRepo(db)),
 	))
+
 	homeRoutes.MakeRoutes(mux, homeHandler.New(
 		errorLog,
 		infoLog,
