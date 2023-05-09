@@ -28,6 +28,11 @@ func New(errorLog *log.Logger, infoLog *log.Logger, service HomeService) *handle
 }
 
 func (s *handler) HomeView() func(w http.ResponseWriter, r *http.Request) {
+	templateCache, err := commonmodels.NewTemplateCache()
+	if err != nil {
+		s.errorLog.Fatal(err)
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		snippets, err := s.service.Latest()
 		if err != nil {
@@ -37,11 +42,6 @@ func (s *handler) HomeView() func(w http.ResponseWriter, r *http.Request) {
 
 		data := httphelpers.NewTemplateData(r)
 		data.Snippets = snippets
-
-		templateCache, err := commonmodels.NewTemplateCache()
-		if err != nil {
-			s.errorLog.Fatal(err)
-		}
 
 		httphelpers.Render(w, http.StatusOK, "home.tmpl", templateCache, data)
 	}

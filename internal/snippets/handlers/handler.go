@@ -2,10 +2,8 @@ package handlers
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
-	"runtime/debug"
 	"strconv"
 
 	commonmodels "github.com/AlejoGarat/snippetbox/internal/models"
@@ -35,6 +33,11 @@ func New(errorLog *log.Logger, infoLog *log.Logger, service SnippetService) *han
 }
 
 func (h *handler) SnippetView() func(w http.ResponseWriter, r *http.Request) {
+	templateCache, err := commonmodels.NewTemplateCache()
+	if err != nil {
+		h.errorLog.Fatal(err)
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		params := httprouter.ParamsFromContext(r.Context())
 
@@ -57,36 +60,32 @@ func (h *handler) SnippetView() func(w http.ResponseWriter, r *http.Request) {
 		data := httphelpers.NewTemplateData(r)
 		data.Snippet = snippet
 
-		templateCache, err := commonmodels.NewTemplateCache()
-		if err != nil {
-			h.errorLog.Fatal(err)
-		}
-
 		httphelpers.Render(w, http.StatusOK, "view.tmpl", templateCache, data)
 	}
 }
 
 func (h *handler) SnippetCreate() func(w http.ResponseWriter, r *http.Request) {
+	templateCache, err := commonmodels.NewTemplateCache()
+	if err != nil {
+		h.errorLog.Fatal(err)
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Simulate incoming data
-		title := "O snail"
-		content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
-		expires := 7
+		data := httphelpers.NewTemplateData(r)
 
-		id, err := h.service.Insert(title, content, expires)
-		if err != nil {
-			trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
-			h.errorLog.Output(2, trace)
-			httphelpers.ServerError(w, err)
-			return
-		}
-
-		http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
+		httphelpers.Render(w, http.StatusOK, "create.tmpl", templateCache, data)
 	}
 }
 
 func (h *handler) SnippetCreateGet() func(w http.ResponseWriter, r *http.Request) {
+	templateCache, err := commonmodels.NewTemplateCache()
+	if err != nil {
+		h.errorLog.Fatal(err)
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Display the form for creating a new snippet..."))
+		data := httphelpers.NewTemplateData(r)
+
+		httphelpers.Render(w, http.StatusOK, "create.tmpl", templateCache, data)
 	}
 }
