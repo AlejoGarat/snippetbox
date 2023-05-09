@@ -11,5 +11,8 @@ type Handler interface {
 }
 
 func MakeRoutes(mux *http.ServeMux, handler Handler) {
-	mux.Handle("/", middlewares.LogRequest(middlewares.SecureHeaders(handler.HomeView())))
+	mux.Handle("/", middlewares.RecoverPanic(
+		middlewares.LogRequest(
+			middlewares.SecureHeaders(
+				handler.HomeView()))))
 }

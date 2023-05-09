@@ -12,6 +12,12 @@ type Handler interface {
 }
 
 func MakeRoutes(mux *http.ServeMux, handler Handler) {
-	mux.Handle("/snippet/view", middlewares.LogRequest(middlewares.SecureHeaders(handler.SnippetView())))
-	mux.Handle("/snippet/create", middlewares.LogRequest(middlewares.SecureHeaders(handler.SnippetCreate())))
+	mux.Handle("/snippet/view", middlewares.RecoverPanic(
+		middlewares.LogRequest(
+			middlewares.SecureHeaders(
+				handler.SnippetView()))))
+	mux.Handle("/snippet/create", middlewares.RecoverPanic(
+		middlewares.LogRequest(
+			middlewares.SecureHeaders(
+				handler.SnippetCreate()))))
 }

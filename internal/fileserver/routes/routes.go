@@ -8,7 +8,9 @@ import (
 
 func MakeRoutes(mux *http.ServeMux) {
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
-	mux.Handle("/static/", middlewares.LogRequest(middlewares.SecureHeaders(
-		http.StripPrefix("/static", fileServer).ServeHTTP),
-	))
+	mux.Handle("/static/", middlewares.RecoverPanic(
+		middlewares.LogRequest(
+			middlewares.SecureHeaders(
+				http.StripPrefix("/static", fileServer).ServeHTTP),
+		)))
 }

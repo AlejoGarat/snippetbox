@@ -1,8 +1,11 @@
 package middlewares
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+
+	httphelpers "github.com/AlejoGarat/snippetbox/pkg"
 )
 
 func SecureHeaders(next http.HandlerFunc) http.Handler {
@@ -22,6 +25,19 @@ func SecureHeaders(next http.HandlerFunc) http.Handler {
 func LogRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s - %s %s %s", r.RemoteAddr, r.Proto, r.Method, r.URL.RequestURI())
+		next.ServeHTTP(w, r)
+	})
+}
+
+func RecoverPanic(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				w.Header().Set("Connection", "close")
+				httphelpers.ServerError(w, fmt.Errorf("%s", err))
+			}
+		}()
+
 		next.ServeHTTP(w, r)
 	})
 }
