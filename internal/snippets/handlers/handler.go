@@ -9,6 +9,7 @@ import (
 
 	commonmodels "github.com/AlejoGarat/snippetbox/internal/models"
 	"github.com/AlejoGarat/snippetbox/internal/repositoryerrors"
+	"github.com/AlejoGarat/snippetbox/internal/serviceerrors"
 	"github.com/AlejoGarat/snippetbox/internal/snippets/models"
 	httphelpers "github.com/AlejoGarat/snippetbox/pkg"
 	"github.com/julienschmidt/httprouter"
@@ -83,7 +84,15 @@ func (h *handler) SnippetCreate() func(w http.ResponseWriter, r *http.Request) {
 
 		id, err := h.service.Insert(title, content, expires)
 		if err != nil {
-			httphelpers.ServerError(w, err)
+			switch {
+			case errors.Is(err, serviceerrors.ErrBlankField),
+				errors.Is(err, serviceerrors.ErrExpiresField),
+				errors.Is(err, serviceerrors.ErrLongField):
+				httphelpers.BadRequestError(w, err)
+			default:
+				httphelpers.ServerError(w, err)
+			}
+
 			return
 		}
 
