@@ -12,6 +12,7 @@ import (
 	"github.com/AlejoGarat/snippetbox/internal/repositoryerrors"
 	"github.com/AlejoGarat/snippetbox/internal/snippets/models"
 	httphelpers "github.com/AlejoGarat/snippetbox/pkg"
+	"github.com/julienschmidt/httprouter"
 )
 
 type handler struct {
@@ -35,7 +36,9 @@ func New(errorLog *log.Logger, infoLog *log.Logger, service SnippetService) *han
 
 func (h *handler) SnippetView() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := strconv.Atoi(r.URL.Query().Get("id"))
+		params := httprouter.ParamsFromContext(r.Context())
+
+		id, err := strconv.Atoi(params.ByName("id"))
 		if err != nil || id < 1 {
 			httphelpers.NotFound(w)
 			return
@@ -65,12 +68,6 @@ func (h *handler) SnippetView() func(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) SnippetCreate() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			w.Header().Set("Allow", http.MethodPost)
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-			return
-		}
-
 		// Simulate incoming data
 		title := "O snail"
 		content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
@@ -84,6 +81,12 @@ func (h *handler) SnippetCreate() func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		http.Redirect(w, r, fmt.Sprintf("/snippet/view?id=%d", id), http.StatusSeeOther)
+		http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
+	}
+}
+
+func (h *handler) SnippetCreateGet() func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Display the form for creating a new snippet..."))
 	}
 }

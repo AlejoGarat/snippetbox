@@ -29,11 +29,6 @@ func New(errorLog *log.Logger, infoLog *log.Logger, service HomeService) *handle
 
 func (s *handler) HomeView() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			httphelpers.NotFound(w)
-			return
-		}
-
 		snippets, err := s.service.Latest()
 		if err != nil {
 			httphelpers.ServerError(w, err)
