@@ -71,7 +71,7 @@ func (h *handler) SnippetCreate() func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		//Simulate incoming data
+		// Simulate incoming data
 		title := "O snail"
 		content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
 		expires := 7
