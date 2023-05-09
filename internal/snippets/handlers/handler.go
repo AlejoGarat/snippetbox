@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -65,15 +66,28 @@ func (h *handler) SnippetView() func(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) SnippetCreate() func(w http.ResponseWriter, r *http.Request) {
-	templateCache, err := commonmodels.NewTemplateCache()
-	if err != nil {
-		h.errorLog.Fatal(err)
-	}
-
 	return func(w http.ResponseWriter, r *http.Request) {
-		data := httphelpers.NewTemplateData(r)
+		err := r.ParseForm()
+		if err != nil {
+			httphelpers.ClientError(w, http.StatusBadRequest)
+			return
+		}
 
-		httphelpers.Render(w, http.StatusOK, "create.tmpl", templateCache, data)
+		title := r.PostForm.Get("title")
+		content := r.PostForm.Get("content")
+		expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+		if err != nil {
+			httphelpers.ClientError(w, http.StatusBadRequest)
+			return
+		}
+
+		id, err := h.service.Insert(title, content, expires)
+		if err != nil {
+			httphelpers.ServerError(w, err)
+			return
+		}
+
+		http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 	}
 }
 
