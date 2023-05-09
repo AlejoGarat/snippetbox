@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	middlewares "github.com/AlejoGarat/snippetbox/pkg/middlewares"
+	"github.com/justinas/alice"
 )
 
 type Handler interface {
@@ -12,12 +13,7 @@ type Handler interface {
 }
 
 func MakeRoutes(mux *http.ServeMux, handler Handler) {
-	mux.Handle("/snippet/view", middlewares.RecoverPanic(
-		middlewares.LogRequest(
-			middlewares.SecureHeaders(
-				handler.SnippetView()))))
-	mux.Handle("/snippet/create", middlewares.RecoverPanic(
-		middlewares.LogRequest(
-			middlewares.SecureHeaders(
-				handler.SnippetCreate()))))
+	standard := alice.New(middlewares.LogRequest, middlewares.LogRequest)
+	mux.Handle("/snippet/view", standard.Then(middlewares.SecureHeaders(handler.SnippetView())))
+	mux.Handle("/snippet/create", standard.Then(middlewares.SecureHeaders(handler.SnippetCreate())))
 }
