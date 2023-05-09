@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"html/template"
 	"log"
 	"net/http"
 
@@ -41,34 +40,14 @@ func (s *handler) HomeView() func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		files := []string{
-			"./ui/html/base.tmpl",
-			"./ui/html/partials/nav.tmpl",
-			"./ui/html/pages/home.tmpl",
-		}
-
-		ts, err := template.ParseFiles(files...)
-		if err != nil {
-			httphelpers.ServerError(w, err)
-			return
-		}
-
-		data := &commonmodels.TemplateData{
-			Snippets: snippets,
-		}
+		data := httphelpers.NewTemplateData(r)
+		data.Snippets = snippets
 
 		templateCache, err := commonmodels.NewTemplateCache()
 		if err != nil {
 			s.errorLog.Fatal(err)
 		}
 
-		err = ts.ExecuteTemplate(w, "base", data)
-		if err != nil {
-			httphelpers.ServerError(w, err)
-		}
-
-		httphelpers.Render(w, http.StatusOK, "home.tmpl", templateCache, &commonmodels.TemplateData{
-			Snippets: snippets,
-		})
+		httphelpers.Render(w, http.StatusOK, "home.tmpl", templateCache, data)
 	}
 }

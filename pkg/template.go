@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"text/template"
+	"time"
 
 	commonmodels "github.com/AlejoGarat/snippetbox/internal/models"
 )
@@ -28,4 +29,10 @@ func Render(w http.ResponseWriter, status int, page string, templateCache map[st
 	w.WriteHeader(status)
 
 	buf.WriteTo(w)
+}
+
+func NewTemplateData(r *http.Request) *commonmodels.TemplateData {
+	return &commonmodels.TemplateData{
+		CurrentYear: time.Now().Year(),
+	}
 }

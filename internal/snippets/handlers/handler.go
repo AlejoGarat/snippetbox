@@ -3,7 +3,6 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"runtime/debug"
@@ -52,35 +51,15 @@ func (h *handler) SnippetView() func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		files := []string{
-			"./ui/html/base.tmpl",
-			"./ui/html/partials/nav.tmpl",
-			"./ui/html/pages/view.tmpl",
-		}
-
-		ts, err := template.ParseFiles(files...)
-		if err != nil {
-			httphelpers.ServerError(w, err)
-			return
-		}
-
-		data := &commonmodels.TemplateData{
-			Snippet: snippet,
-		}
+		data := httphelpers.NewTemplateData(r)
+		data.Snippet = snippet
 
 		templateCache, err := commonmodels.NewTemplateCache()
 		if err != nil {
 			h.errorLog.Fatal(err)
 		}
 
-		err = ts.ExecuteTemplate(w, "base", data)
-		if err != nil {
-			httphelpers.ServerError(w, err)
-		}
-
-		httphelpers.Render(w, http.StatusOK, "view.tmpl", templateCache, &commonmodels.TemplateData{
-			Snippet: snippet,
-		})
+		httphelpers.Render(w, http.StatusOK, "view.tmpl", templateCache, data)
 	}
 }
 
