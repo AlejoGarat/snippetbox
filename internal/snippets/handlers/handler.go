@@ -13,7 +13,9 @@ import (
 	"github.com/AlejoGarat/snippetbox/internal/snippets/models"
 	httphelpers "github.com/AlejoGarat/snippetbox/pkg"
 	"github.com/AlejoGarat/snippetbox/pkg/errorhelpers"
+	formhelpers "github.com/AlejoGarat/snippetbox/pkg/form"
 	"github.com/AlejoGarat/snippetbox/pkg/validator"
+	"github.com/go-playground/form/v4"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -82,7 +84,17 @@ func (h *handler) SnippetCreate() func(w http.ResponseWriter, r *http.Request) {
 		h.errorLog.Fatal(err)
 	}
 
+	formDecoder := form.NewDecoder()
+
+	var form snippetCreateForm
+
 	return func(w http.ResponseWriter, r *http.Request) {
+		err = formhelpers.DecodePostForm(r, &form, formDecoder)
+		if err != nil {
+			httphelpers.ClientError(w, http.StatusBadRequest)
+			return
+		}
+
 		err := r.ParseForm()
 		if err != nil {
 			httphelpers.ClientError(w, http.StatusBadRequest)
