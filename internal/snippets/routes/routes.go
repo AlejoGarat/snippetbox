@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	middlewares "github.com/AlejoGarat/snippetbox/pkg/middlewares"
+	"github.com/alexedwards/scs/v2"
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
 )
@@ -14,9 +15,10 @@ type Handler interface {
 	SnippetCreateGet() func(http.ResponseWriter, *http.Request)
 }
 
-func MakeRoutes(router *httprouter.Router, handler Handler) {
+func MakeRoutes(router *httprouter.Router, sessionManager *scs.SessionManager, handler Handler) {
+	dynamic := alice.New(sessionManager.LoadAndSave)
 	standard := alice.New(middlewares.LogRequest, middlewares.LogRequest)
-	router.Handler(http.MethodGet, "/snippet/view/:id", standard.Then(middlewares.SecureHeaders(handler.SnippetView())))
-	router.Handler(http.MethodPost, "/snippet/create", standard.Then(middlewares.SecureHeaders(handler.SnippetCreate())))
-	router.Handler(http.MethodGet, "/snippet/create", standard.Then(middlewares.SecureHeaders(handler.SnippetCreateGet())))
+	router.Handler(http.MethodGet, "/snippet/view/:id", dynamic.Then(standard.Then(middlewares.SecureHeaders(handler.SnippetView()))))
+	router.Handler(http.MethodPost, "/snippet/create", dynamic.Then(standard.Then(middlewares.SecureHeaders(handler.SnippetCreate()))))
+	router.Handler(http.MethodGet, "/snippet/create", dynamic.Then(standard.Then(middlewares.SecureHeaders(handler.SnippetCreateGet()))))
 }

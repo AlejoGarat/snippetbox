@@ -6,7 +6,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/julienschmidt/httprouter"
 
@@ -50,15 +53,19 @@ func main() {
 		httphelpers.NotFound(w)
 	})
 
-	fileServerRoutes.MakeRoutes(router)
+	sessionManager := scs.New()
+	sessionManager.Store = mysqlstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
 
-	snippetsRoutes.MakeRoutes(router, snippetsHandler.New(
+	fileServerRoutes.MakeRoutes(router, sessionManager)
+
+	snippetsRoutes.MakeRoutes(router, sessionManager, snippetsHandler.New(
 		errorLog,
 		infoLog,
 		snippetService.NewSnippetService(snippetRepo.NewSnippetRepo(db)),
 	))
 
-	homeRoutes.MakeRoutes(router, homeHandler.New(
+	homeRoutes.MakeRoutes(router, sessionManager, homeHandler.New(
 		errorLog,
 		infoLog,
 		homeService.NewHomeService(homeRepo.NewSnippetRepo(db)),
