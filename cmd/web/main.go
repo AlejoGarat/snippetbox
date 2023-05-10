@@ -63,12 +63,14 @@ func main() {
 		errorLog,
 		infoLog,
 		snippetService.NewSnippetService(snippetRepo.NewSnippetRepo(db)),
+		sessionManager,
 	))
 
 	homeRoutes.MakeRoutes(router, sessionManager, homeHandler.New(
 		errorLog,
 		infoLog,
 		homeService.NewHomeService(homeRepo.NewSnippetRepo(db)),
+		sessionManager,
 	))
 
 	srv := &http.Server{

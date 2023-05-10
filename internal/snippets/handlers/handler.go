@@ -15,14 +15,16 @@ import (
 	"github.com/AlejoGarat/snippetbox/pkg/errorhelpers"
 	formhelpers "github.com/AlejoGarat/snippetbox/pkg/form"
 	"github.com/AlejoGarat/snippetbox/pkg/validator"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	"github.com/julienschmidt/httprouter"
 )
 
 type handler struct {
-	errorLog *log.Logger
-	infoLog  *log.Logger
-	service  SnippetService
+	errorLog       *log.Logger
+	infoLog        *log.Logger
+	service        SnippetService
+	sessionManager *scs.SessionManager
 }
 
 type snippetCreateForm struct {
@@ -38,11 +40,12 @@ type SnippetService interface {
 	Get(id int) (*models.Snippet, error)
 }
 
-func New(errorLog *log.Logger, infoLog *log.Logger, service SnippetService) *handler {
+func New(errorLog *log.Logger, infoLog *log.Logger, service SnippetService, sessionManager *scs.SessionManager) *handler {
 	return &handler{
-		errorLog: errorLog,
-		infoLog:  infoLog,
-		service:  service,
+		errorLog:       errorLog,
+		infoLog:        infoLog,
+		service:        service,
+		sessionManager: sessionManager,
 	}
 }
 
@@ -71,7 +74,7 @@ func (h *handler) SnippetView() func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		data := httphelpers.NewTemplateData(r)
+		data := httphelpers.NewTemplateData(r, h.sessionManager)
 		data.Snippet = snippet
 
 		httphelpers.Render(w, http.StatusOK, "view.tmpl", templateCache, data)
@@ -129,7 +132,7 @@ func (h *handler) SnippetCreate() func(w http.ResponseWriter, r *http.Request) {
 				errors.Is(err, serviceerrors.ErrLongField):
 
 				if !form.Valid() {
-					data := httphelpers.NewTemplateData(r)
+					data := httphelpers.NewTemplateData(r, h.sessionManager)
 					form.FieldErrors = errMap
 					data.Form = form
 					httphelpers.Render(w, http.StatusUnprocessableEntity, "create.tmpl", templateCache, data)
@@ -142,6 +145,7 @@ func (h *handler) SnippetCreate() func(w http.ResponseWriter, r *http.Request) {
 
 			return
 		}
+		h.sessionManager.Put(r.Context(), "flash", "Snippet successfully created!")
 
 		http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 	}
@@ -154,7 +158,7 @@ func (h *handler) SnippetCreateGet() func(w http.ResponseWriter, r *http.Request
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		data := httphelpers.NewTemplateData(r)
+		data := httphelpers.NewTemplateData(r, h.sessionManager)
 
 		data.Form = snippetCreateForm{
 			Expires: 365,

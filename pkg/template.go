@@ -8,6 +8,7 @@ import (
 	"time"
 
 	commonmodels "github.com/AlejoGarat/snippetbox/internal/models"
+	"github.com/alexedwards/scs/v2"
 )
 
 func Render(w http.ResponseWriter, status int, page string, templateCache map[string]*template.Template, data *commonmodels.TemplateData) {
@@ -31,8 +32,9 @@ func Render(w http.ResponseWriter, status int, page string, templateCache map[st
 	buf.WriteTo(w)
 }
 
-func NewTemplateData(r *http.Request) *commonmodels.TemplateData {
+func NewTemplateData(r *http.Request, sessionManager *scs.SessionManager) *commonmodels.TemplateData {
 	return &commonmodels.TemplateData{
 		CurrentYear: time.Now().Year(),
+		Flash:       sessionManager.PopString(r.Context(), "flash"),
 	}
 }
