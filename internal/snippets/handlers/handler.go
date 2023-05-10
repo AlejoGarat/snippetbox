@@ -12,6 +12,7 @@ import (
 	"github.com/AlejoGarat/snippetbox/internal/serviceerrors"
 	"github.com/AlejoGarat/snippetbox/internal/snippets/models"
 	httphelpers "github.com/AlejoGarat/snippetbox/pkg"
+	"github.com/AlejoGarat/snippetbox/pkg/errorhelpers"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -21,8 +22,15 @@ type handler struct {
 	service  SnippetService
 }
 
+type snippetCreateForm struct {
+	Title       string
+	Content     string
+	Expires     int
+	FieldErrors errorhelpers.MyErrorMap
+}
+
 type SnippetService interface {
-	Insert(title string, content string, expires int) (int, error)
+	Insert(title string, content string, expires int) (int, errorhelpers.MyErrorMap)
 	Get(id int) (*models.Snippet, error)
 }
 
@@ -67,6 +75,11 @@ func (h *handler) SnippetView() func(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) SnippetCreate() func(w http.ResponseWriter, r *http.Request) {
+	templateCache, err := commonmodels.NewTemplateCache()
+	if err != nil {
+		h.errorLog.Fatal(err)
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := r.ParseForm()
 		if err != nil {
@@ -74,21 +87,34 @@ func (h *handler) SnippetCreate() func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		title := r.PostForm.Get("title")
-		content := r.PostForm.Get("content")
 		expires, err := strconv.Atoi(r.PostForm.Get("expires"))
 		if err != nil {
 			httphelpers.ClientError(w, http.StatusBadRequest)
 			return
 		}
 
-		id, err := h.service.Insert(title, content, expires)
-		if err != nil {
+		form := snippetCreateForm{
+			Title:       r.PostForm.Get("title"),
+			Content:     r.PostForm.Get("content"),
+			Expires:     expires,
+			FieldErrors: map[string]error{},
+		}
+
+		id, errMap := h.service.Insert(form.Title, form.Content, form.Expires)
+		errs := errMap.Unwrap()
+
+		if len(errs) != 0 {
+			err := errors.Join(errs...)
 			switch {
 			case errors.Is(err, serviceerrors.ErrBlankField),
 				errors.Is(err, serviceerrors.ErrExpiresField),
 				errors.Is(err, serviceerrors.ErrLongField):
-				httphelpers.BadRequestError(w, err)
+
+				data := httphelpers.NewTemplateData(r)
+				form.FieldErrors = errMap
+				data.Form = form
+				log.Println(form.FieldErrors)
+				httphelpers.Render(w, http.StatusUnprocessableEntity, "create.tmpl", templateCache, data)
 			default:
 				httphelpers.ServerError(w, err)
 			}
@@ -108,6 +134,10 @@ func (h *handler) SnippetCreateGet() func(w http.ResponseWriter, r *http.Request
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		data := httphelpers.NewTemplateData(r)
+
+		data.Form = snippetCreateForm{
+			Expires: 365,
+		}
 
 		httphelpers.Render(w, http.StatusOK, "create.tmpl", templateCache, data)
 	}

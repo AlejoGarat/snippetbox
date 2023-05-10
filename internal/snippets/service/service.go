@@ -1,12 +1,12 @@
 package repo
 
 import (
-	"errors"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/AlejoGarat/snippetbox/internal/serviceerrors"
 	"github.com/AlejoGarat/snippetbox/internal/snippets/models"
+	"github.com/AlejoGarat/snippetbox/pkg/errorhelpers"
 )
 
 const (
@@ -28,28 +28,31 @@ func NewSnippetService(repo SnippetRepo) *snippetService {
 	}
 }
 
-func (ss *snippetService) Insert(title string, content string, expires int) (int, error) {
-	var fieldErrors []error
+func (ss *snippetService) Insert(title string, content string, expires int) (int, errorhelpers.MyErrorMap) {
+	var fieldErrors errorhelpers.MyErrorMap
 
 	if strings.TrimSpace(title) == "" {
-		fieldErrors = append(fieldErrors, serviceerrors.ErrBlankField)
+		fieldErrors = errorhelpers.JoinErrorMap(fieldErrors, "title", serviceerrors.ErrBlankField)
 	} else if utf8.RuneCountInString(title) > 100 {
-		fieldErrors = append(fieldErrors, serviceerrors.ErrLongField)
+		fieldErrors = errorhelpers.JoinErrorMap(fieldErrors, "title", serviceerrors.ErrLongField)
 	}
 
 	if strings.TrimSpace(content) == "" {
-		fieldErrors = append(fieldErrors, serviceerrors.ErrBlankField)
+		fieldErrors = errorhelpers.JoinErrorMap(fieldErrors, "content", serviceerrors.ErrBlankField)
 	}
 
 	if expires != 1 && expires != 7 && expires != 365 {
-		fieldErrors = append(fieldErrors, serviceerrors.ErrExpiresField)
+		fieldErrors = errorhelpers.JoinErrorMap(fieldErrors, "expires", serviceerrors.ErrExpiresField)
 	}
 
 	if len(fieldErrors) > 0 {
-		return invalidId, errors.Join(fieldErrors...)
+		return invalidId, fieldErrors
 	}
 
-	return ss.repo.Insert(title, content, expires)
+	id, err := ss.repo.Insert(title, content, expires)
+
+	errorhelpers.JoinErrorMap(fieldErrors, "insert", err)
+	return id, fieldErrors
 }
 
 func (ss *snippetService) Get(id int) (*models.Snippet, error) {
