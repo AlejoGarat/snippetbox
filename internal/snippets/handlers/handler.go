@@ -13,6 +13,7 @@ import (
 	"github.com/AlejoGarat/snippetbox/internal/snippets/models"
 	httphelpers "github.com/AlejoGarat/snippetbox/pkg"
 	"github.com/AlejoGarat/snippetbox/pkg/errorhelpers"
+	"github.com/AlejoGarat/snippetbox/pkg/validator"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -27,6 +28,7 @@ type snippetCreateForm struct {
 	Content     string
 	Expires     int
 	FieldErrors errorhelpers.MyErrorMap
+	validator.Validator
 }
 
 type SnippetService interface {
@@ -94,11 +96,15 @@ func (h *handler) SnippetCreate() func(w http.ResponseWriter, r *http.Request) {
 		}
 
 		form := snippetCreateForm{
-			Title:       r.PostForm.Get("title"),
-			Content:     r.PostForm.Get("content"),
-			Expires:     expires,
-			FieldErrors: map[string]error{},
+			Title:   r.PostForm.Get("title"),
+			Content: r.PostForm.Get("content"),
+			Expires: expires,
 		}
+
+		form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
+		form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")
+		form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank")
+		form.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365")
 
 		id, errMap := h.service.Insert(form.Title, form.Content, form.Expires)
 		errs := errMap.Unwrap()
@@ -110,11 +116,14 @@ func (h *handler) SnippetCreate() func(w http.ResponseWriter, r *http.Request) {
 				errors.Is(err, serviceerrors.ErrExpiresField),
 				errors.Is(err, serviceerrors.ErrLongField):
 
-				data := httphelpers.NewTemplateData(r)
-				form.FieldErrors = errMap
-				data.Form = form
-				log.Println(form.FieldErrors)
-				httphelpers.Render(w, http.StatusUnprocessableEntity, "create.tmpl", templateCache, data)
+				if !form.Valid() {
+					data := httphelpers.NewTemplateData(r)
+					form.FieldErrors = errMap
+					data.Form = form
+					httphelpers.Render(w, http.StatusUnprocessableEntity, "create.tmpl", templateCache, data)
+					return
+				}
+
 			default:
 				httphelpers.ServerError(w, err)
 			}
