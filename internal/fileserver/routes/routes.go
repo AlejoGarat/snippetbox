@@ -11,7 +11,12 @@ import (
 
 func MakeRoutes(router *httprouter.Router, sessionManager *scs.SessionManager) {
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
-	dynamic := alice.New(sessionManager.LoadAndSave)
-	standard := alice.New(middlewares.LogRequest, middlewares.LogRequest)
-	router.Handler(http.MethodGet, "/static/", dynamic.Then(standard.Then(middlewares.SecureHeaders(http.StripPrefix("/static", fileServer).ServeHTTP))))
+	mids := alice.New(sessionManager.LoadAndSave, middlewares.LogRequest, middlewares.LogRequest)
+	router.Handler(http.MethodGet, "/static/",
+		mids.Then(
+			middlewares.SecureHeaders(
+				http.StripPrefix("/static", fileServer).ServeHTTP,
+			),
+		),
+	)
 }
