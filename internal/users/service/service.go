@@ -28,8 +28,8 @@ func (s *userService) ShowLogin() error {
 	return nil
 }
 
-func (s *userService) Login() error {
-	return nil
+func (s *userService) Login(email string, password string) (int, error) {
+	return s.repo.Authenticate(email, password)
 }
 
 func (s *userService) Logout() error {
