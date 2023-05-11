@@ -185,6 +185,16 @@ func (h *handler) Login() func(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) Logout() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Logout the user...")
+		err := h.sessionManager.RenewToken(r.Context())
+		if err != nil {
+			httphelpers.ServerError(w, err)
+			return
+		}
+
+		h.sessionManager.Remove(r.Context(), "authenticatedUserID")
+
+		h.sessionManager.Put(r.Context(), "flash", "You've been logged out successfully!")
+
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }
