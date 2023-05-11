@@ -20,8 +20,8 @@ func (s *userService) ShowSignup() error {
 	return nil
 }
 
-func (s *userService) Signup() error {
-	return nil
+func (s *userService) Signup(name string, email string, password string) error {
+	return s.repo.Insert(name, email, password)
 }
 
 func (s *userService) ShowLogin() error {
