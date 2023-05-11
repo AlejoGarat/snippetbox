@@ -14,22 +14,14 @@ func NewUserRepo(db *sql.DB) *userRepo {
 	}
 }
 
-func (r *userRepo) ShowSignup() error {
+func (r *userRepo) Insert(name, email, password string) error {
 	return nil
 }
 
-func (r *userRepo) Signup() error {
-	return nil
+func (r *userRepo) Authenticate(email, password string) (int, error) {
+	return 0, nil
 }
 
-func (r *userRepo) ShowLogin() error {
-	return nil
-}
-
-func (r *userRepo) Login() error {
-	return nil
-}
-
-func (r *userRepo) Logout() error {
-	return nil
+func (r *userRepo) Exists(id int) (bool, error) {
+	return false, nil
 }

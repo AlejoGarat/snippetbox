@@ -5,11 +5,9 @@ type userService struct {
 }
 
 type UserRepo interface {
-	ShowSignup() error
-	Signup() error
-	ShowLogin() error
-	Login() error
-	Logout() error
+	Insert(string, string, string) error
+	Authenticate(string, string) (int, error)
+	Exists(int) (bool, error)
 }
 
 func NewUserService(repo UserRepo) *userService {
