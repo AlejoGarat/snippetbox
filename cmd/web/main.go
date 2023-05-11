@@ -23,6 +23,10 @@ import (
 	snippetRepo "github.com/AlejoGarat/snippetbox/internal/snippets/repository"
 	snippetsRoutes "github.com/AlejoGarat/snippetbox/internal/snippets/routes"
 	snippetService "github.com/AlejoGarat/snippetbox/internal/snippets/service"
+	userHandler "github.com/AlejoGarat/snippetbox/internal/users/handlers"
+	userRepo "github.com/AlejoGarat/snippetbox/internal/users/repository"
+	userRoutes "github.com/AlejoGarat/snippetbox/internal/users/routes"
+	userService "github.com/AlejoGarat/snippetbox/internal/users/service"
 	httphelpers "github.com/AlejoGarat/snippetbox/pkg"
 )
 
@@ -72,6 +76,13 @@ func main() {
 		errorLog,
 		infoLog,
 		homeService.NewHomeService(homeRepo.NewSnippetRepo(db)),
+		sessionManager,
+	))
+
+	userRoutes.MakeRoutes(router, sessionManager, userHandler.New(
+		errorLog,
+		infoLog,
+		userService.NewUserService(userRepo.NewUserRepo(db)),
 		sessionManager,
 	))
 
