@@ -10,7 +10,7 @@ type homeRepo struct {
 	DB *sql.DB
 }
 
-func NewSnippetRepo(db *sql.DB) *homeRepo {
+func NewHomeRepo(db *sql.DB) *homeRepo {
 	return &homeRepo{
 		DB: db,
 	}

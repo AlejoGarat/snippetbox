@@ -9,6 +9,10 @@ import (
 	"github.com/justinas/alice"
 )
 
+type UserRepo interface {
+	Exists(id int) (bool, error)
+}
+
 type Handler interface {
 	ShowSignup() func(w http.ResponseWriter, r *http.Request)
 	Signup() func(http.ResponseWriter, *http.Request)
@@ -17,9 +21,9 @@ type Handler interface {
 	Logout() func(http.ResponseWriter, *http.Request)
 }
 
-func MakeRoutes(router *httprouter.Router, sessionManager *scs.SessionManager, handler Handler) {
-	dynamic := alice.New(sessionManager.LoadAndSave)
-	standard := alice.New(middlewares.LogRequest, middlewares.LogRequest)
+func MakeRoutes(router *httprouter.Router, sessionManager *scs.SessionManager, userRepo UserRepo, handler Handler) {
+	dynamic := alice.New(sessionManager.LoadAndSave, middlewares.NoSurf)
+	standard := alice.New(middlewares.LogRequest, middlewares.LogRequest, middlewares.RecoverPanic)
 	router.Handler(http.MethodGet, "/user/signup", dynamic.Then(standard.Then(middlewares.SecureHeaders(handler.ShowSignup()))))
 	router.Handler(http.MethodPost, "/user/signup", dynamic.Then(standard.Then(middlewares.SecureHeaders(handler.Signup()))))
 	router.Handler(http.MethodGet, "/user/login", dynamic.Then(standard.Then(middlewares.SecureHeaders(handler.ShowLogin()))))

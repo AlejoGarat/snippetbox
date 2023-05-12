@@ -65,24 +65,33 @@ func main() {
 
 	fileServerRoutes.MakeRoutes(router, sessionManager)
 
-	snippetsRoutes.MakeRoutes(router, sessionManager, snippetsHandler.New(
+	snippetRepo := snippetRepo.NewSnippetRepo(db)
+	snippetService := snippetService.NewSnippetService(snippetRepo)
+
+	userRepo := userRepo.NewUserRepo(db)
+	userService := userService.NewUserService(userRepo)
+
+	homeRepo := homeRepo.NewHomeRepo(db)
+	homeService := homeService.NewHomeService(homeRepo)
+
+	snippetsRoutes.MakeRoutes(router, sessionManager, userRepo, snippetsHandler.New(
 		errorLog,
 		infoLog,
-		snippetService.NewSnippetService(snippetRepo.NewSnippetRepo(db)),
+		snippetService,
 		sessionManager,
 	))
 
-	homeRoutes.MakeRoutes(router, sessionManager, homeHandler.New(
+	homeRoutes.MakeRoutes(router, sessionManager, userRepo, homeHandler.New(
 		errorLog,
 		infoLog,
-		homeService.NewHomeService(homeRepo.NewSnippetRepo(db)),
+		homeService,
 		sessionManager,
 	))
 
-	userRoutes.MakeRoutes(router, sessionManager, userHandler.New(
+	userRoutes.MakeRoutes(router, sessionManager, userRepo, userHandler.New(
 		errorLog,
 		infoLog,
-		userService.NewUserService(userRepo.NewUserRepo(db)),
+		userService,
 		sessionManager,
 	))
 

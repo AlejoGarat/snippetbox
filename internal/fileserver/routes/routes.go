@@ -11,7 +11,7 @@ import (
 
 func MakeRoutes(router *httprouter.Router, sessionManager *scs.SessionManager) {
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
-	mids := alice.New(sessionManager.LoadAndSave, middlewares.LogRequest, middlewares.LogRequest)
+	mids := alice.New(sessionManager.LoadAndSave, middlewares.LogRequest, middlewares.LogRequest, middlewares.RecoverPanic)
 	router.Handler(http.MethodGet, "/static/",
 		mids.Then(
 			middlewares.SecureHeaders(
