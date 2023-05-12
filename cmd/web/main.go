@@ -15,6 +15,8 @@ import (
 	"github.com/julienschmidt/httprouter"
 
 	fileServerRoutes "github.com/AlejoGarat/snippetbox/internal/fileserver/routes"
+	healtcheckHandler "github.com/AlejoGarat/snippetbox/internal/healthcheck/handlers"
+	healtcheckRoutes "github.com/AlejoGarat/snippetbox/internal/healthcheck/routes"
 	homeHandler "github.com/AlejoGarat/snippetbox/internal/home/handlers"
 	homeRepo "github.com/AlejoGarat/snippetbox/internal/home/repository"
 	homeRoutes "github.com/AlejoGarat/snippetbox/internal/home/routes"
@@ -94,6 +96,8 @@ func main() {
 		userService,
 		sessionManager,
 	))
+
+	healtcheckRoutes.MakeRoutes(router, sessionManager, userRepo, healtcheckHandler.New())
 
 	tlsConfig := &tls.Config{
 		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
