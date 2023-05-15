@@ -61,3 +61,6 @@ func NewTemplateCache() (map[string]*template.Template, error) {
 
 	return cache, nil
 }
+
+func Hola() {
+}
