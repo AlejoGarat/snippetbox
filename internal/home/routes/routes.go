@@ -18,7 +18,12 @@ type Handler interface {
 }
 
 func MakeRoutes(router *httprouter.Router, sessionManager *scs.SessionManager, userRepo UserRepo, handler Handler) {
-	dynamic := alice.New(sessionManager.LoadAndSave)
-	standard := alice.New(middlewares.LogRequest, middlewares.LogRequest)
-	router.Handler(http.MethodGet, "/", dynamic.Then(standard.Then(middlewares.SecureHeaders(handler.HomeView()))))
+	mids := alice.New(sessionManager.LoadAndSave, middlewares.LogRequest, middlewares.LogRequest, middlewares.RecoverPanic)
+	router.Handler(http.MethodGet, "/",
+		mids.Then(
+			middlewares.SecureHeaders(
+				handler.HomeView(),
+			),
+		),
+	)
 }

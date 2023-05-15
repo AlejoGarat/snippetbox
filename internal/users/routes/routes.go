@@ -22,11 +22,46 @@ type Handler interface {
 }
 
 func MakeRoutes(router *httprouter.Router, sessionManager *scs.SessionManager, userRepo UserRepo, handler Handler) {
-	dynamic := alice.New(sessionManager.LoadAndSave, middlewares.NoSurf)
-	standard := alice.New(middlewares.LogRequest, middlewares.LogRequest, middlewares.RecoverPanic)
-	router.Handler(http.MethodGet, "/user/signup", dynamic.Then(standard.Then(middlewares.SecureHeaders(handler.ShowSignup()))))
-	router.Handler(http.MethodPost, "/user/signup", dynamic.Then(standard.Then(middlewares.SecureHeaders(handler.Signup()))))
-	router.Handler(http.MethodGet, "/user/login", dynamic.Then(standard.Then(middlewares.SecureHeaders(handler.ShowLogin()))))
-	router.Handler(http.MethodPost, "/user/login", dynamic.Then(standard.Then(middlewares.SecureHeaders(handler.Login()))))
-	router.Handler(http.MethodPost, "/user/logout", dynamic.Then(standard.Then(middlewares.SecureHeaders(handler.Logout()))))
+	mids := alice.New(sessionManager.LoadAndSave, middlewares.NoSurf, middlewares.LogRequest, middlewares.LogRequest,
+		middlewares.RecoverPanic)
+
+	router.Handler(http.MethodGet, "/user/signup",
+		mids.Then(
+			middlewares.SecureHeaders(
+				handler.ShowSignup(),
+			),
+		),
+	)
+
+	router.Handler(http.MethodPost, "/user/signup",
+		mids.Then(
+			middlewares.SecureHeaders(
+				handler.Signup(),
+			),
+		),
+	)
+
+	router.Handler(http.MethodGet, "/user/login",
+		mids.Then(
+			middlewares.SecureHeaders(
+				handler.ShowLogin(),
+			),
+		),
+	)
+
+	router.Handler(http.MethodPost, "/user/login",
+		mids.Then(
+			middlewares.SecureHeaders(
+				handler.Login(),
+			),
+		),
+	)
+
+	router.Handler(http.MethodPost, "/user/logout",
+		mids.Then(
+			middlewares.SecureHeaders(
+				handler.Logout(),
+			),
+		),
+	)
 }

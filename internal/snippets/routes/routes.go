@@ -19,9 +19,29 @@ type Handler interface {
 }
 
 func MakeRoutes(router *httprouter.Router, sessionManager *scs.SessionManager, userRepo UserRepo, handler Handler) {
-	dynamic := alice.New(sessionManager.LoadAndSave, middlewares.NoSurf)
-	standard := alice.New(middlewares.LogRequest, middlewares.LogRequest, middlewares.RecoverPanic)
-	router.Handler(http.MethodGet, "/snippet/view/:id", dynamic.Then(standard.Then(middlewares.SecureHeaders(handler.SnippetView()))))
-	router.Handler(http.MethodPost, "/snippet/create", dynamic.Then(standard.Then(middlewares.SecureHeaders(handler.SnippetCreate()))))
-	router.Handler(http.MethodGet, "/snippet/create", dynamic.Then(standard.Then(middlewares.SecureHeaders(handler.SnippetCreateGet()))))
+	mids := alice.New(sessionManager.LoadAndSave, middlewares.NoSurf, middlewares.LogRequest, middlewares.LogRequest, middlewares.RecoverPanic)
+
+	router.Handler(http.MethodGet, "/snippet/view/:id",
+		mids.Then(
+			middlewares.SecureHeaders(
+				handler.SnippetView(),
+			),
+		),
+	)
+
+	router.Handler(http.MethodPost, "/snippet/create",
+		mids.Then(
+			middlewares.SecureHeaders(
+				handler.SnippetCreate(),
+			),
+		),
+	)
+
+	router.Handler(http.MethodGet, "/snippet/create",
+		mids.Then(
+			middlewares.SecureHeaders(
+				handler.SnippetCreateGet(),
+			),
+		),
+	)
 }
