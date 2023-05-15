@@ -18,7 +18,14 @@ type Handler interface {
 }
 
 func MakeRoutes(router *httprouter.Router, sessionManager *scs.SessionManager, userRepo UserRepo, handler Handler) {
-	dynamic := alice.New(sessionManager.LoadAndSave, middlewares.NoSurf)
-	standard := alice.New(middlewares.LogRequest, middlewares.LogRequest, middlewares.RecoverPanic)
-	router.Handler(http.MethodGet, "/ping", dynamic.Then(standard.Then(middlewares.SecureHeaders(handler.Ping()))))
+	mids := alice.New(sessionManager.LoadAndSave, middlewares.NoSurf, middlewares.LogRequest, middlewares.LogRequest,
+		middlewares.RecoverPanic)
+
+	router.Handler(http.MethodGet, "/ping",
+		mids.Then(
+			middlewares.SecureHeaders(
+				handler.Ping(),
+			),
+		),
+	)
 }
